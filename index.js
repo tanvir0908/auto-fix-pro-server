@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
 const { ObjectId } = require("mongodb");
 require("dotenv").config();
 
@@ -32,12 +33,21 @@ async function run() {
     const serviceCollection = client.db("AutoFixPro").collection("services");
     const bookingCollection = client.db("AutoFixPro").collection("bookings");
 
+    // jwt token api
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+
+      const token = jwt.sign(user, "secret", { expiresIn: "1h" });
+      res.send(token);
+    });
+
+    // services API
     app.get("/services", async (req, res) => {
       const cursor = serviceCollection.find();
       const result = await cursor.toArray();
       res.send(result);
     });
-
     app.get("/services/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
@@ -51,7 +61,6 @@ async function run() {
 
     // booking
     app.get("/bookings", async (req, res) => {
-      console.log(req.query.email);
       let query = {};
       if (req.query?.email) {
         query = { email: req.query.email };
@@ -61,7 +70,6 @@ async function run() {
     });
     app.post("/bookings", async (req, res) => {
       const booking = req.body;
-      console.log(booking);
       const result = await bookingCollection.insertOne(booking);
       res.send(result);
     });
@@ -69,7 +77,6 @@ async function run() {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
       const updatedBooking = req.body;
-      console.log(updatedBooking);
       const updateDoc = {
         $set: {
           status: updatedBooking.status,
